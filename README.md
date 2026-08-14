@@ -2,12 +2,12 @@
 
 <img width="1465" height="950" alt="截屏2026-08-14 17 50 26" src="https://github.com/user-attachments/assets/47adb442-fff5-4196-8017-7c6aacc4342e" />
 
-A **Godot editor plugin** that draws a crisp, screen-space silhouette outline around the selected `MeshInstance3D` in the 3D viewport.
+A **Godot Editor Plugin** that draws a crisp, screen-space silhouette outline around the selected `MeshInstance3D` in the 3D viewport.
 
 Unlike typical edge-detection plugins, it highlights **only the outer silhouette** of the selected object — not the internal hard edges, UV seams, or wireframe lines.
 
 > [!NOTE]
-> This is an **editor-only** tool plugin. It enhances the editor's selection feedback and does not add any runtime game functionality.
+> This is an **Editor-Only** tool plugin. It enhances the editor's selection feedback and does not add any runtime game functionality.
 
 ## Features
 
