@@ -11,6 +11,7 @@ class_name OutlineCompositorEffect
 ## 故改用 MSAA depth 纹理（get_depth_layer(0, true)）作为 attachment，配套创建 samples
 ## 一致的 MSAA 种子纹理，stencil copy 后 resolve 到非 MSAA 种子再执行 jump-flood。
 
+
 # --- Exports ---
 ## 轮廓颜色。
 @export var outline_color: Color = Color(0.286, 1.0, 0.616)
@@ -30,6 +31,7 @@ class_name OutlineCompositorEffect
 
 ## 检查 stencil 时使用的掩码。
 @export var stencil_mask: int = 1
+
 
 # --- Private Vars ---
 ## jump-flood 需要执行的 pass 数（由 thickness 推导）。
@@ -83,6 +85,7 @@ var _rebuild_pipelines: bool = true
 # 环境不支持时置位：只提示一次并禁用效果，避免每帧刷屏/崩溃
 var _unsupported: bool = false
 
+
 # --- Built-in Functions ---
 
 func _init() -> void:
@@ -106,6 +109,7 @@ func _init() -> void:
 		Vector3(-1, 3, 0),
 	])
 	var vertex_bytes := vertex_data.to_byte_array()
+	
 	_scdo_vertex_buffer = _rd.vertex_buffer_create(vertex_bytes.size(), vertex_bytes)
 	_scdo_vertex_array = _rd.vertex_array_create(3, _scdo_vertex_format, [_scdo_vertex_buffer])
 	
@@ -124,9 +128,11 @@ func _notification(what: int) -> void:
 			_rd.free_rid(_sc_shader)
 		if _do_shader.is_valid():
 			_rd.free_rid(_do_shader)
+		
 		for rid: RID in _textures:
 			if rid.is_valid():
 				_rd.free_rid(rid)
+		
 		if _sc_msaa_texture.is_valid():
 			_rd.free_rid(_sc_msaa_texture)
 		if _scdo_vertex_buffer.is_valid():
@@ -142,6 +148,7 @@ func _load_glsl_from_file(p_path: String) -> RDShaderSPIRV:
 	if shader_file == null:
 		push_error("Failed to load shader file: ", p_path)
 		return null
+	
 	return shader_file.get_spirv()
 
 
@@ -168,6 +175,7 @@ func _build_sc_pipeline() -> void:
 	if shader_spirv == null:
 		push_error("Failed to load stencil copy shader")
 		return
+	
 	_sc_shader = _rd.shader_create_from_spirv(shader_spirv)
 	assert(_sc_shader.is_valid())
 	
@@ -236,6 +244,7 @@ func _build_sc_pipeline() -> void:
 		stencil_state,
 		blend,
 	)
+	
 	if not _sc_pipeline.is_valid():
 		push_error("Highlight Outline: stencil copy 管线创建失败。插件已禁用。")
 		_unsupported = true
@@ -251,6 +260,7 @@ func _build_do_pipeline() -> void:
 	if shader_spirv == null:
 		push_error("Failed to load draw outline shader")
 		return
+	
 	_do_shader = _rd.shader_create_from_spirv(shader_spirv)
 	assert(_do_shader.is_valid())
 	
@@ -268,6 +278,7 @@ func _build_jf_pipeline() -> void:
 	if shader_spirv == null:
 		push_error("Failed to load jump flood shader")
 		return
+	
 	_jf_shader = _rd.shader_create_from_spirv(shader_spirv)
 	assert(_jf_shader.is_valid())
 	
@@ -334,12 +345,15 @@ func _build_textures() -> void:
 			RenderingDevice.TEXTURE_USAGE_COLOR_ATTACHMENT_BIT |
 			RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
 		)
+		
 		var msaa_rid: RID = _rd.texture_create(msaa_format, texture_view)
 		assert(msaa_rid.is_valid())
 		var old_msaa: RID = _sc_msaa_texture
 		_sc_msaa_texture = msaa_rid
+		
 		if old_msaa.is_valid():
 			_rd.free_rid(old_msaa)
+	
 	elif _sc_msaa_texture.is_valid():
 		_rd.free_rid(_sc_msaa_texture)
 		_sc_msaa_texture = RID()
@@ -358,6 +372,7 @@ func _update_common_buffers() -> void:
 func _render_callback(_p_effect_callback_type: int, p_render_data: RenderData) -> void:
 	if not _rd:
 		return
+	
 	if _unsupported:
 		return
 	
@@ -370,7 +385,6 @@ func _render_callback(_p_effect_callback_type: int, p_render_data: RenderData) -
 		return
 	
 	var rebuild := false
-	
 	if _rebuild_pipelines:
 		_mutex.lock()
 		_rebuild_pipelines = false
@@ -400,6 +414,7 @@ func _render_callback(_p_effect_callback_type: int, p_render_data: RenderData) -
 		push_error("Highlight Outline: POST_TRANSPARENT 阶段无法获取 depth 纹理。插件已禁用。")
 		_unsupported = true
 		return
+	
 	var depth_usage: int = _rd.texture_get_format(depth_tex).usage_bits
 	if (depth_usage & RenderingDevice.TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0:
 		push_warning("Highlight Outline: 当前 depth 纹理不可作为 attachment（MSAA resolve 目标无 stencil）。插件已禁用。")

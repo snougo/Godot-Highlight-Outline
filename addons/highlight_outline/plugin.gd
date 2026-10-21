@@ -21,7 +21,7 @@ var _selected_node: MeshInstance3D
 
 func _enter_tree() -> void:
 	_register_settings()
-
+	
 	# 写 stencil 的 overlay 材质：透明不改变外观；
 	# depth pass 与 depth fail 都写 stencil（= 无视深度，覆盖完整投影，避免内部"洞"）
 	_stencil_material = StandardMaterial3D.new()
@@ -49,8 +49,10 @@ func _enter_tree() -> void:
 func _exit_tree() -> void:
 	_clear_outline()
 	_detach_compositor()
+	
 	if ProjectSettings.settings_changed.is_connected(_on_project_settings_changed):
 		ProjectSettings.settings_changed.disconnect(_on_project_settings_changed)
+	
 	_stencil_material = null
 	_effect = null
 	_compositor = null
@@ -60,9 +62,11 @@ func _exit_tree() -> void:
 func _disable_plugin() -> void:
 	if ProjectSettings.settings_changed.is_connected(_on_project_settings_changed):
 		ProjectSettings.settings_changed.disconnect(_on_project_settings_changed)
+	
 	# 移除当前分组设置，并顺带清理旧版残留键
 	for setting: String in [SETTING_COLOR, SETTING_THICKNESS, LEGACY_SETTING_COLOR, LEGACY_SETTING_THICKNESS]:
 		ProjectSettings.set_setting(setting, null)     # null = 擦除该设置项
+	
 	ProjectSettings.save()
 
 
@@ -70,9 +74,11 @@ func _attach_compositor() -> void:
 	var viewport := get_editor_interface().get_editor_viewport_3d(0)
 	if viewport == null:
 		return
+	
 	var camera := viewport.get_camera_3d()
 	if camera == null:
 		return
+	
 	if camera.compositor != _compositor:
 		camera.compositor = _compositor
 
@@ -81,6 +87,7 @@ func _detach_compositor() -> void:
 	var viewport := get_editor_interface().get_editor_viewport_3d(0)
 	if viewport == null:
 		return
+	
 	var camera := viewport.get_camera_3d()
 	if camera != null and camera.compositor == _compositor:
 		camera.compositor = null
@@ -104,6 +111,7 @@ func _on_selection_changed() -> void:
 func _clear_outline() -> void:
 	if _selected_node != null and is_instance_valid(_selected_node):
 		_selected_node.material_overlay = null
+	
 	_selected_node = null
 
 
@@ -112,20 +120,22 @@ func _clear_outline() -> void:
 # 注册项目设置（保留用户已改过的值，只补默认值/类型提示/初始值）
 func _register_settings() -> void:
 	_migrate_legacy_settings()
-
+	
 	# 轮廓颜色
 	if not ProjectSettings.has_setting(SETTING_COLOR):
 		ProjectSettings.set_setting(SETTING_COLOR, DEFAULT_COLOR)
+	
 	ProjectSettings.set_initial_value(SETTING_COLOR, DEFAULT_COLOR)
 	ProjectSettings.add_property_info({
 		"name": SETTING_COLOR,
 		"type": TYPE_COLOR,
 	})
 	ProjectSettings.set_as_basic(SETTING_COLOR, true)
-
+	
 	# 轮廓粗细
 	if not ProjectSettings.has_setting(SETTING_THICKNESS):
 		ProjectSettings.set_setting(SETTING_THICKNESS, DEFAULT_THICKNESS)
+	
 	ProjectSettings.set_initial_value(SETTING_THICKNESS, DEFAULT_THICKNESS)
 	ProjectSettings.add_property_info({
 		"name": SETTING_THICKNESS,
@@ -140,9 +150,10 @@ func _register_settings() -> void:
 func _migrate_legacy_settings() -> void:
 	if ProjectSettings.has_setting(LEGACY_SETTING_COLOR) and not ProjectSettings.has_setting(SETTING_COLOR):
 		ProjectSettings.set_setting(SETTING_COLOR, ProjectSettings.get_setting(LEGACY_SETTING_COLOR))
+	
 	if ProjectSettings.has_setting(LEGACY_SETTING_THICKNESS) and not ProjectSettings.has_setting(SETTING_THICKNESS):
 		ProjectSettings.set_setting(SETTING_THICKNESS, ProjectSettings.get_setting(LEGACY_SETTING_THICKNESS))
-
+	
 	ProjectSettings.set_setting(LEGACY_SETTING_COLOR, null)
 	ProjectSettings.set_setting(LEGACY_SETTING_THICKNESS, null)
 
